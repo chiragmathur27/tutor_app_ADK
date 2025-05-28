@@ -1,17 +1,30 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
-import os
 import uuid
 from typing import List, Tuple
+
+import os
+from dotenv import load_dotenv
 
 from tutor_agent import root_agent
 from google.adk.runners import Runner, RunConfig
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
+load_dotenv()
+PORT = int(os.environ.get("PORT",8000))
+
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://tutor-app-adk-fe.vercel.app"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"]
+)
 session_service = InMemorySessionService()
 
 runner = Runner(
@@ -50,7 +63,7 @@ async def process_message(
             )
 
     new_message = types.Content(role="user",parts=[types.Part(text=content)])
-    print("query : ",new_message)
+
 
     if run_config is None:
         run_config = RunConfig()
@@ -65,21 +78,13 @@ async def process_message(
             new_message=new_message,
             run_config=run_config
         ):
-            print(f"--- Received Event ---")
-            print(f"Event Class: {event.__class__.__name__}")
-            # print(f"Raw Event Object: {event}") # Uncomment this for very verbose output
-            print(f"Event Attributes: {event.__dict__}")
-            print(f"----------------------")
-
             event_dict = {
                 "type": getattr(event, 'type', 'unknown'),
                 "partial": getattr(event, 'partial', False),
                 "event_class": event.__class__.__name__
             }
 
-            # Attempt to extract text from event.content.parts
             if hasattr(event, 'content') and event.content:
-                # Add content details to event_dict for debugging
                 event_dict["content_present"] = True
                 if hasattr(event.content, 'parts') and event.content.parts:
                     event_dict["content_parts_count"] = len(event.content.parts)
@@ -105,9 +110,6 @@ async def process_message(
             # Also check for direct 'text' attribute if it's not nested in content
             if hasattr(event, 'text') and event.text:
                  event_dict["direct_event_text"] = event.text
-                 # You might need to decide if this text should be accumulated
-                 # alongside content.parts[0].text or instead of it.
-                 # For agent responses, content.parts[0].text is usually preferred.
 
             collected_events.append(event_dict)
 
@@ -138,4 +140,4 @@ async def health_check():
 
 if __name__ == "__main__":
     print("Starting FastAPI server...")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
