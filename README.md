@@ -2,6 +2,9 @@
 
 A FastAPI-based backend service that implements a conversational AI tutor using Google's AI Development Kit (ADK).
 
+Frontend Repo : https://github.com/chiragmathur27/tutor_app_adk_fe
+Deployed URL : https://tutor-app-adk-fe.vercel.app/
+
 ## Overview
 
 This project is a backend service that provides an AI-powered tutoring system. It uses Google's AI Development Kit (ADK) to create an interactive tutoring experience, allowing users to have natural conversations with an AI tutor.
